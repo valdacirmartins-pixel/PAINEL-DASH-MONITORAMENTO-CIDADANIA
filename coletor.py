@@ -205,7 +205,14 @@ def inserir_registro(registro):
 )
     ON CONFLICT (url) DO NOTHING;
     """
+if inseriu:
 
+    print(
+        registro["data_publicacao"],
+        registro["municipio"],
+        registro["titulo"][:60]
+    )
+    
     with engine.begin() as conn:
         result = conn.execute(text(sql), registro)
         return result.rowcount
@@ -324,7 +331,15 @@ def classificar(texto):
         "ameaçado",
         "ameaçado de morte",
         "roubado",
-        "assalto"
+        "assalto",
+        "facada",
+        "tiro",
+        "tiros",
+        "disparo",
+        "disparos",
+        "queimaduras",
+        "incendiado",
+        "incêndio criminoso",
     ]
 
     acidente = [
@@ -407,20 +422,19 @@ def processar_noticia(item):
                 try:
                     artigo.download()
                     artigo.parse()
+                    artigo.nlp()
                     break
 
-                except:
+                except Exception:
                     time.sleep(2)
 
             titulo = artigo.title or ""
             texto = artigo.text or ""
 
-        except:
+        except Exception:
             pass
 
-
         # FALLBACK
-
         if len(texto) < 50:
 
             titulo2, texto2 = extrair_texto_requests(url)
@@ -429,16 +443,12 @@ def processar_noticia(item):
                 titulo = titulo2
                 texto = texto2
 
-
         if len(texto) < 30:
             return None
 
-
-        base = f"{titulo} {texto}"
-
+        base = f"{titulo}\n{texto}"
 
         municipio_norm = detectar_municipio(base)
-
 
         if municipio_norm:
 
@@ -456,21 +466,20 @@ def processar_noticia(item):
             latitude = None
             longitude = None
 
-
         categoria = classificar(base)
 
-
+        # DATA DA PUBLICAÇÃO
         data_publicacao = None
 
-if artigo:
-    try:
-        data_publicacao = artigo.publish_date
-    except Exception:
-        pass
+        if artigo:
 
-if data_publicacao is None:
-    data_publicacao = datetime.now()
+            try:
+                data_publicacao = artigo.publish_date
+            except Exception:
+                pass
 
+        if data_publicacao is None:
+            data_publicacao = datetime.now()
 
         return {
 
@@ -487,7 +496,6 @@ if data_publicacao is None:
 
         }
 
-
     except Exception as e:
 
         print("Erro processando:", url, e)
@@ -502,7 +510,8 @@ def buscar_urls():
     urls = {}
 
 
-    anos = [str(a) for a in range(2010, 2027)]
+   anos = [str(a) for a in range(2010, 2027)]
+
 meses = [
     "janeiro",
     "fevereiro",
@@ -558,40 +567,24 @@ meses = [
 
     for q in QUERIES:
 
+    queries.append(q)
 
-        queries.append(q)
+    for ano in anos:
+        queries.append(f"{q} {ano}")
 
+    for ano in anos:
+        for mes in meses:
+            queries.append(f"{q} {mes} {ano}")
 
+    for uf in estados:
+        queries.append(f"{q} {uf}")
+
+    for cidade in CAPITAIS:
+        queries.append(f"{q} {cidade}")
+
+    for uf in estados:
         for ano in anos:
-
-            queries.append(
-                f"{q} {ano}"
-            )
-for ano in anos:
-    for mes in meses:
-        queries.append(f"{q} {mes} {ano}")
-
-        for uf in estados:
-
-            queries.append(
-                f"{q} {uf}"
-            )
-
-
-        for cidade in CAPITAIS:
-
-            queries.append(
-                f"{q} {cidade}"
-            )
-
-
-        for uf in estados:
-
-            for ano in anos:
-
-                queries.append(
-                    f"{q} {uf} {ano}"
-                )
+            queries.append(f"{q} {uf} {ano}")
 
 
     queries = list(set(queries))
@@ -722,7 +715,7 @@ def main():
     print("INICIANDO PROCESSAMENTO")
     print(f"ITENS: {len(itens)}")
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=15) as executor:
 
         futures = [
             executor.submit(
