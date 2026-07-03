@@ -509,27 +509,24 @@ def buscar_urls():
 
     urls = {}
 
+    anos = [str(a) for a in range(2010, 2027)]
 
-   anos = [str(a) for a in range(2010, 2027)]
-
-meses = [
-    "janeiro",
-    "fevereiro",
-    "março",
-    "abril",
-    "maio",
-    "junho",
-    "julho",
-    "agosto",
-    "setembro",
-    "outubro",
-    "novembro",
-    "dezembro"
-]
-
+    meses = [
+        "janeiro",
+        "fevereiro",
+        "março",
+        "abril",
+        "maio",
+        "junho",
+        "julho",
+        "agosto",
+        "setembro",
+        "outubro",
+        "novembro",
+        "dezembro"
+    ]
 
     estados = list(MAPA_UF.values())
-
 
     CAPITAIS = [
         "São Paulo",
@@ -561,82 +558,60 @@ meses = [
         "Florianópolis"
     ]
 
-
     queries = []
-
 
     for q in QUERIES:
 
-    queries.append(q)
+        queries.append(q)
 
-    for ano in anos:
-        queries.append(f"{q} {ano}")
-
-    for ano in anos:
-        for mes in meses:
-            queries.append(f"{q} {mes} {ano}")
-
-    for uf in estados:
-        queries.append(f"{q} {uf}")
-
-    for cidade in CAPITAIS:
-        queries.append(f"{q} {cidade}")
-
-    for uf in estados:
         for ano in anos:
-            queries.append(f"{q} {uf} {ano}")
+            queries.append(f"{q} {ano}")
 
+        for ano in anos:
+            for mes in meses:
+                queries.append(f"{q} {mes} {ano}")
+
+        for uf in estados:
+            queries.append(f"{q} {uf}")
+
+        for cidade in CAPITAIS:
+            queries.append(f"{q} {cidade}")
+
+        for uf in estados:
+            for ano in anos:
+                queries.append(f"{q} {uf} {ano}")
 
     queries = list(set(queries))
 
-
     print(f"🔎 {len(queries)} queries")
-
 
     with DDGS() as ddgs:
 
-
         for i, query in enumerate(queries):
-
 
             try:
 
-                print(
-                    f"🔍 {i+1}/{len(queries)}"
-                )
-
+                print(f"🔍 {i+1}/{len(queries)}")
 
                 resultados = ddgs.text(
-
                     query,
-
                     region="br-pt",
-
                     safesearch="off",
-
                     max_results=300
-
                 )
-
 
                 novos = 0
 
-
                 for r in resultados:
 
-
                     url = r.get("href")
-                    url = url.split("?")[0]
-
 
                     if not url:
-
                         continue
 
-
+                    url = url.split("?")[0]
 
                     if any(x in url.lower() for x in [
-
                         "youtube",
                         "facebook",
                         "instagram",
@@ -655,39 +630,23 @@ meses = [
                         "google.com",
                         "webcache",
                         "archive.org",
+                        "/feed/",
+                        "rss"
                     ]):
-
                         continue
 
-
-
                     if url not in urls:
-
                         urls[url] = query
-
                         novos += 1
 
-
-
-                print(
-                    f"✅ +{novos}"
-                )
-
+                print(f"✅ +{novos}")
 
             except Exception as e:
-
                 print(e)
-
-
 
             time.sleep(random.uniform(0.2, 0.5))
 
-
-
-    print(
-        f"📦 TOTAL URLs: {len(urls)}"
-    )
-
+    print(f"📦 TOTAL URLs: {len(urls)}")
 
     return urls
 
