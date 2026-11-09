@@ -11,3 +11,4 @@ lxml_html_clean
 gunicorn
 werkzeug
 dash-bootstrap-components
+psycopg[binary]
