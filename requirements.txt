@@ -13,3 +13,4 @@ werkzeug
 dash-bootstrap-components
 psycopg[binary]
 openpyxl
+reportlab>=4.2,<5
